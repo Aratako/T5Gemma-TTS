@@ -1,3 +1,38 @@
+
+
+# ==== audio backend helper (auto-added) ====
+def _torch_ge_29():
+    try:
+        import torch
+        v = torch.__version__.split("+")[0]
+        major, minor = map(int, v.split(".")[:2])
+        return (major, minor) >= (2, 9)
+    except Exception:
+        return False
+
+def load_audio_segment(audio_path, offset=0, num_frames=None):
+    if not _torch_ge_29():
+        import torchaudio
+        return torchaudio.load(
+            audio_path,
+            frame_offset=offset,
+            num_frames=num_frames
+        )
+
+    import soundfile as sf
+    import torch
+
+    wav, sr = sf.read(audio_path)
+    if wav.ndim == 2:
+        wav = wav.mean(axis=1)
+
+    start = offset or 0
+    end = None if num_frames is None else start + num_frames
+    wav = wav[start:end]
+
+    wav = torch.from_numpy(wav).unsqueeze(0)
+    return wav, sr
+
 """TTS inference script for HF safetensors.
 
 Thin wrapper to load a T5GemmaVoiceForConditionalGeneration checkpoint saved in
@@ -135,8 +170,15 @@ def run_inference(
         target_generation_length = float(target_duration)
 
     if not no_reference_audio:
-        info = torchaudio.info(reference_speech)
-        prompt_end_frame = int(cut_off_sec * info.sample_rate)
+        if _torch_ge_29():
+            import soundfile as sf
+            info = sf.info(reference_speech)
+            sr = info.samplerate
+        else:
+            import torchaudio
+            info = torchaudio.info(reference_speech)
+            sr = info.sample_rate
+        prompt_end_frame = int(cut_off_sec * sr)
     else:
         prompt_end_frame = 0
 
@@ -179,7 +221,14 @@ def run_inference(
 
     os.makedirs(output_dir, exist_ok=True)
     out_path = os.path.join(output_dir, "generated.wav")
-    torchaudio.save(out_path, gen_audio, codec_audio_sr)
+    if _torch_ge_29():
+        import soundfile as sf
+        sf.write(out_path,
+                 gen_audio.squeeze().detach().cpu().numpy(),
+                 codec_audio_sr)
+    else:
+        import torchaudio
+        torchaudio.save(out_path, gen_audio, codec_audio_sr)
 
     max_abs = torch.max(gen_audio.abs()).item()
     rms = torch.sqrt((gen_audio ** 2).mean()).item()

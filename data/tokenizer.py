@@ -1,3 +1,38 @@
+
+
+# ==== audio backend helper (auto-added) ====
+def _torch_ge_29():
+    try:
+        import torch
+        v = torch.__version__.split("+")[0]
+        major, minor = map(int, v.split(".")[:2])
+        return (major, minor) >= (2, 9)
+    except Exception:
+        return False
+
+def load_audio_segment(audio_path, offset=0, num_frames=None):
+    if not _torch_ge_29():
+        import torchaudio
+        return torchaudio.load(
+            audio_path,
+            frame_offset=offset,
+            num_frames=num_frames
+        )
+
+    import soundfile as sf
+    import torch
+
+    wav, sr = sf.read(audio_path)
+    if wav.ndim == 2:
+        wav = wav.mean(axis=1)
+
+    start = offset or 0
+    end = None if num_frames is None else start + num_frames
+    wav = wav[start:end]
+
+    wav = torch.from_numpy(wav).unsqueeze(0)
+    return wav, sr
+
 from typing import Any, Optional
 
 import torch
@@ -95,6 +130,8 @@ def tokenize_audio(tokenizer: AudioTokenizer, audio_path: str, offset = -1, num_
         wav, sr = torchaudio.load(audio_path)
     target_sr = getattr(tokenizer, "encode_sample_rate", tokenizer.sample_rate)
     if sr != target_sr:
+        # ensure float32 for torchaudio resample
+        wav = wav.to(dtype=torch.float32)
         wav = torchaudio.transforms.Resample(sr, target_sr)(wav)
         sr = target_sr
     if wav.shape[0] == 2:
