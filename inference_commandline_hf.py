@@ -10,7 +10,6 @@ import random
 import fire
 import numpy as np
 import torch
-import whisper
 
 from data.tokenizer import AudioTokenizer
 from duration_estimator import estimate_duration
@@ -20,6 +19,7 @@ from inference_tts_utils import (
     get_audio_info,
     get_sample_rate,
     save_audio,
+    transcribe_audio,
 )
 
 try:
@@ -64,7 +64,12 @@ def run_inference(
 ):
     seed_everything(seed)
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
 
     if AutoModelForSeq2SeqLM is None:
         raise ImportError("transformers is not installed")
@@ -114,9 +119,7 @@ def run_inference(
     if no_reference_audio:
         prefix_transcript = ""
     elif not has_reference_text:
-        wh_model = whisper.load_model("large-v3-turbo")
-        result = wh_model.transcribe(reference_speech)
-        prefix_transcript = result["text"]
+        prefix_transcript = transcribe_audio(reference_speech, device)
         print(f"[Info] Whisper transcribed text: {prefix_transcript}")
     else:
         prefix_transcript = reference_text

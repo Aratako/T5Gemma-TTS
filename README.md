@@ -37,6 +37,16 @@ pip install "torch<=2.8.0" torchaudio --index-url https://download.pytorch.org/w
 
 - **Windows**: On some native Windows environments, inference may exhibit unstable behavior such as inconsistent generation times or occasional hangs. This issue has been observed in my testing but the root cause is still under investigation. If you experience similar problems, consider using WSL2 or Docker as a workaround.
 
+## Tested Environments
+
+The following environments have been tested by the developer. Other configurations may work but are not guaranteed.
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| Linux + CUDA | ✅ Tested | |
+| Windows + CUDA (Docker) | ✅ Tested | Native Windows has known issues |
+| Apple Silicon (MPS) | ✅ Tested | M4 Max MacBook Pro |
+
 ## Quick Start
 
 ### Basic Inference (HuggingFace Format)

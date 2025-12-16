@@ -18,7 +18,6 @@ datasets<4
 peft>=0.12.0
 
 # Audio/tokenizer backends
-openai-whisper
 https://huggingface.co/NandemoGHS/Anime-XCodec2-44.1kHz-v2/resolve/main/xcodec2-0.1.7.tar.gz
 ffmpeg-python
 scipy

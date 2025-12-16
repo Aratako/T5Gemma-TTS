@@ -117,7 +117,12 @@ class dataset(torch.utils.data.Dataset):
             or self.args.target_time_stretch_prob > 0
         )
         if need_runtime_tokenizer:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            if torch.cuda.is_available():
+                device = torch.device("cuda")
+            elif torch.backends.mps.is_available():
+                device = torch.device("mps")
+            else:
+                device = torch.device("cpu")
             self.audio_tokenizer = AudioTokenizer(
                 backend="xcodec2",
                 model_name=getattr(self.args, "xcodec2_model_name", None),

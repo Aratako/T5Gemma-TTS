@@ -14,15 +14,15 @@ from typing import Optional, Tuple
 import gradio as gr
 import numpy as np
 import torch
-import whisper
 
 from data.tokenizer import AudioTokenizer
 from duration_estimator import estimate_duration
 from inference_tts_utils import (
-    inference_one_sample,
-    normalize_text_with_lang,
     get_audio_info,
     get_sample_rate,
+    inference_one_sample,
+    normalize_text_with_lang,
+    transcribe_audio,
 )
 
 try:
@@ -58,12 +58,6 @@ def seed_everything(seed: Optional[int]) -> int:
 # Model / tokenizer loaders (cached)
 # ---------------------------------------------------------------------------
 
-@lru_cache(maxsize=2)
-def _get_whisper_model(device: str):
-    """Cache Whisper model to avoid reloading on every inference."""
-    print(f"[Info] Loading Whisper model (large-v3-turbo) on {device}...")
-    return whisper.load_model("large-v3-turbo", device=device)
-
 
 @lru_cache(maxsize=1)
 def _load_resources(
@@ -78,7 +72,12 @@ def _load_resources(
     if AutoModelForSeq2SeqLM is None or AutoTokenizer is None:
         raise ImportError("Please install transformers before running the demo.")
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
     model = AutoModelForSeq2SeqLM.from_pretrained(
         model_dir,
         trust_remote_code=True,
@@ -176,10 +175,8 @@ def run_inference(
     if no_reference_audio:
         prefix_transcript = ""
     elif not has_reference_text:
-        print("[Info] No reference text; transcribing reference speech with Whisper (large-v3-turbo).")
-        wh_model = _get_whisper_model(resources["whisper_device"])
-        result = wh_model.transcribe(reference_speech)
-        prefix_transcript = result["text"]
+        print("[Info] No reference text; transcribing reference speech with Whisper.")
+        prefix_transcript = transcribe_audio(reference_speech, resources["whisper_device"])
         print(f"[Info] Whisper transcription: {prefix_transcript}")
     else:
         prefix_transcript = reference_text
@@ -373,7 +370,14 @@ def main():
         args.cpu_codec = True
         args.no_compile = True
 
-    whisper_device = "cpu" if (args.cpu_whisper or args.low_vram) else ("cuda" if torch.cuda.is_available() else "cpu")
+    if args.cpu_whisper or args.low_vram:
+        whisper_device = "cpu"
+    elif torch.cuda.is_available():
+        whisper_device = "cuda"
+    elif torch.backends.mps.is_available():
+        whisper_device = "mps"
+    else:
+        whisper_device = "cpu"
 
     resources = _load_resources(
         args.model_dir,

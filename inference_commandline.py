@@ -2,7 +2,6 @@ import os
 import torch
 import numpy as np
 import random
-import whisper
 import fire
 from argparse import Namespace
 
@@ -20,6 +19,7 @@ from inference_tts_utils import (
     get_audio_info,
     get_sample_rate,
     save_audio,
+    transcribe_audio,
 )
 
 ############################################################
@@ -84,7 +84,12 @@ def run_inference(
 
     # Load model bundle and args
     torch.serialization.add_safe_globals([Namespace])
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
     ckpt_fn = os.path.join(model_root, model_name + ".pth")
     if not os.path.exists(ckpt_fn):
         raise FileNotFoundError(f"Checkpoint not found: {ckpt_fn}. Please point model_root/model_name to a T5Gemma bundle.")
@@ -144,9 +149,7 @@ def run_inference(
         prefix_transcript = ""
     elif not has_reference_text:
         print("[Info] No reference_text provided, transcribing reference_speech with Whisper.")
-        wh_model = whisper.load_model("large-v3-turbo")
-        result = wh_model.transcribe(reference_speech)
-        prefix_transcript = result["text"]
+        prefix_transcript = transcribe_audio(reference_speech, device)
         print(f"[Info] Whisper transcribed text: {prefix_transcript}")
     else:
         prefix_transcript = reference_text
