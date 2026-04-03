@@ -1,5 +1,6 @@
 # T5Gemma-TTS
 
+[![arXiv](https://img.shields.io/badge/arXiv-2604.01760-b31b1b.svg)](https://arxiv.org/abs/2604.01760)
 [![Model](https://img.shields.io/badge/Model-HuggingFace-yellow)](https://huggingface.co/Aratako/T5Gemma-TTS-2b-2b)
 [![Demo](https://img.shields.io/badge/Demo-HuggingFace%20Space-blue)](https://huggingface.co/spaces/Aratako/T5Gemma-TTS-Demo)
 [![License: MIT](https://img.shields.io/badge/Code%20License-MIT-green.svg)](LICENSE)
@@ -13,6 +14,9 @@ Training and inference code for **T5Gemma-TTS**, a multilingual Text-to-Speech m
 For model details, audio samples, and technical information, please refer to the [model card](https://huggingface.co/Aratako/T5Gemma-TTS-2b-2b).
 
 ## Updates
+
+**2026/04/03**
+- 🔥 **Technical report is out!** Read the paper on arXiv: [https://arxiv.org/abs/2604.01760](https://arxiv.org/abs/2604.01760)
 
 **2025/12/17**
 - Added batch inference support for generating multiple audio variations in parallel from the same input (Gradio UI)
