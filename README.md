@@ -44,7 +44,7 @@ pip install -r requirements.txt
 
 **Note**: For GPU support, install PyTorch with CUDA before running `pip install`:
 ```bash
-pip install "torch<=2.8.0" torchaudio --index-url https://download.pytorch.org/whl/cu128
+pip install torch torchaudio --index-url https://download.pytorch.org/whl/cu128
 ```
 
 ## Known Issues

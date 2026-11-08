@@ -1,6 +1,6 @@
-# Core deep learning stack (match README instructions; install torch/torchaudio with the CUDA 12.4 wheels)
-torch>=2.5.1,<=2.8.0
-torchaudio>=2.5.1,<=2.8.0
+# Core deep learning stack (install torch/torchaudio with the desired CUDA wheel index)
+torch>=2.5.1
+torchaudio>=2.5.1
 
 # General utilities
 numpy
